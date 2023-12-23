@@ -10,6 +10,9 @@ class App: Application() {
     override fun onCreate() {
         super.onCreate()
         mainRepresentative=MainRepresentative.Base(UIObservable.Single())
+        /**
+         1 действие, создаем объект 
+         */
 
     }
     fun activityCreated (firstOpening:Boolean){

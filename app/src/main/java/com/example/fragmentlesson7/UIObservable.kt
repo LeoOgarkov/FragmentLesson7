@@ -1,5 +1,6 @@
 package com.example.fragmentlesson7
 
+import android.util.Log
 import androidx.annotation.MainThread
 import androidx.annotation.StringRes
 /**
@@ -16,17 +17,23 @@ import androidx.annotation.StringRes
 interface UIObservable<T:Any> : UiUpdate<T> {
     fun updateObserver(uiObserver: UiObserver<T> = UiObserver.Empty())
 
+    fun getTotalProgress():Int
+
+    fun clearProgress()
+
     class  Single <T:Any> : UIObservable<T> {
 
         @Volatile
-        private var cache: T? = null
+        private var cache: Int? = null
+
+        @Volatile
+        private var totalProgress: Int = 0
 
         @Volatile
         private var observer:UiObserver<T> = UiObserver.Empty()
         /**
         1    @MainThread
          */
-
         @MainThread
         override fun updateObserver(uiObserver: UiObserver<T>) = synchronized(Single::class.java) {
             observer=uiObserver
@@ -45,30 +52,37 @@ interface UIObservable<T:Any> : UiUpdate<T> {
                 }
             }
         }
+
+        override fun getTotalProgress(): Int {
+                return totalProgress
+        }
+
+        override fun clearProgress() {
+            totalProgress=0
+            cache=0
+        }
         /**
         2 @AnotherThread
          */
         /**
          * Called by Model. (If Observer is not ready, we cash the Date/
          */
-        override fun update(data: T) =  synchronized(Single::class.java) {
+        override fun update(data: Int) =  synchronized(Single::class.java) {
             if (observer.isEmpty()){
-                cache = data
+                totalProgress+=data
+                cache = totalProgress
             } else {
                 cache=null
-                observer.update(data)
+                totalProgress+=data
+                observer.update(totalProgress)
             }
         }
-
-
     }
 }
 // Дженерик типа Т, типа Any, если стоит Any без восклицательного знака, то не может быть null
 interface UiUpdate <T:Any> {
-    fun update(data:T)
+    fun update(data:Int)
 }
-
-
 interface UiObserver<T: Any>: UiUpdate<T> {
 
     fun isEmpty(): Boolean = false
@@ -76,7 +90,6 @@ interface UiObserver<T: Any>: UiUpdate<T> {
     class Empty <T:Any> :UiObserver<T> {
         override fun isEmpty() = true
 
-        override fun update(data: T) = Unit
+        override fun update(data: Int) = Unit
     }
-
 }
